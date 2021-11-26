@@ -39,7 +39,8 @@ internal class StripFactoryTest {
         val distinctNumbersInStrip = strip.tickets
             .flatMap { it.rows }
             .flatten()
-            .mapNotNull(Square::value)
+            .filterIsInstance<Number>()
+            .map { it.value }
             .toSet()
         assertThat(distinctNumbersInStrip, hasSize(90))
         distinctNumbersInStrip.forEach { assertThat(it, isIn((1..90).toList())) }
@@ -51,8 +52,8 @@ internal class StripFactoryTest {
 
         val rows = strip.tickets.flatMap { it.rows }
         rows.forEach { row ->
-            assertThat(row.filter(Square::isEmpty), hasSize(4))
-            assertThat(row.filter(Square::isFilled), hasSize(5))
+            assertThat(row.filterIsInstance<Blank>(), hasSize(4))
+            assertThat(row.filterIsInstance<Number>(), hasSize(5))
         }
     }
 
@@ -62,7 +63,7 @@ internal class StripFactoryTest {
 
         val columns = strip.tickets.flatMap { it.columns }
         columns.forEach { column ->
-            assertThat(column.count(Square::isFilled), isIn((1..3).toList()))
+            assertThat(column.count { it is Number }, isIn((1..3).toList()))
         }
     }
 
@@ -73,15 +74,24 @@ internal class StripFactoryTest {
         strip.tickets.forEach { ticket ->
             ticket.columns.forEachIndexed { column, values ->
                 when (column) {
-                    0 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((1..9).toList())) }
-                    1 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((10..19).toList())) }
-                    2 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((20..29).toList())) }
-                    3 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((30..39).toList())) }
-                    4 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((40..49).toList())) }
-                    5 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((50..59).toList())) }
-                    6 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((60..69).toList())) }
-                    7 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((70..79).toList())) }
-                    8 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((80..90).toList())) }
+                    0 -> values.filterIsInstance<Number>().map { it.value }
+                        .forEach { assertThat(it, isIn((1..9).toList())) }
+                    1 -> values.filterIsInstance<Number>().map { it.value }
+                        .forEach { assertThat(it, isIn((10..19).toList())) }
+                    2 -> values.filterIsInstance<Number>().map { it.value }
+                        .forEach { assertThat(it, isIn((20..29).toList())) }
+                    3 -> values.filterIsInstance<Number>().map { it.value }
+                        .forEach { assertThat(it, isIn((30..39).toList())) }
+                    4 -> values.filterIsInstance<Number>().map { it.value }
+                        .forEach { assertThat(it, isIn((40..49).toList())) }
+                    5 -> values.filterIsInstance<Number>().map { it.value }
+                        .forEach { assertThat(it, isIn((50..59).toList())) }
+                    6 -> values.filterIsInstance<Number>().map { it.value }
+                        .forEach { assertThat(it, isIn((60..69).toList())) }
+                    7 -> values.filterIsInstance<Number>().map { it.value }
+                        .forEach { assertThat(it, isIn((70..79).toList())) }
+                    8 -> values.filterIsInstance<Number>().map { it.value }
+                        .forEach { assertThat(it, isIn((80..90).toList())) }
                 }
             }
         }
@@ -93,15 +103,15 @@ internal class StripFactoryTest {
 
         strip.tickets.forEach { ticket ->
             ticket.columns.forEach { column ->
-                val columnNumbers = column.mapNotNull(Square::value)
+                val columnNumbers = column.filterIsInstance<Number>()
                 assertThat(columnNumbers, `is`(columnNumbers.sorted()))
             }
         }
     }
 
-    // it takes 450-600ms on my local
+    // it takes about 350ms on my local
     @Test
     fun `should generate 10k strips in 1 second`() {
-        assertTimeout(Duration.ofSeconds(1)) { Strip.Factory.generate(10_000, randomGenerator)[0] }
+        assertTimeout(Duration.ofSeconds(1)) { Strip.Factory.generate(10_000, randomGenerator) }
     }
 }

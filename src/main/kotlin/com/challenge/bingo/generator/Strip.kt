@@ -10,16 +10,16 @@ private const val NUMBERS_PER_ROW = 5
 private const val NUMBERS_PER_TICKET = TICKET_ROWS * NUMBERS_PER_ROW
 
 private val NUMBERS_BY_COLUMN = mapOf(
-    0 to (1..9).toList(),
-    1 to (10..19).toList(),
-    2 to (20..29).toList(),
-    3 to (30..39).toList(),
-    4 to (40..49).toList(),
-    5 to (50..59).toList(),
-    6 to (60..69).toList(),
-    7 to (70..79).toList(),
-    8 to (80..90).toList(),
-)
+    0 to (1..9),
+    1 to (10..19),
+    2 to (20..29),
+    3 to (30..39),
+    4 to (40..49),
+    5 to (50..59),
+    6 to (60..69),
+    7 to (70..79),
+    8 to (80..90),
+).mapValues { it.value.map(::Number) }
 
 private fun stripRowIndex(ticketIndex: Int, ticketRowIndex: Int): Int = ticketIndex * TICKET_ROWS + ticketRowIndex
 private fun ticketIndex(stripRowIndex: Int): Int = stripRowIndex / TICKET_ROWS
@@ -28,21 +28,24 @@ private fun columnsRemaining(columnIndex: Int): Int = COLUMNS - columnIndex - 1
 
 class Strip private constructor() {
 
-    val tickets = List(TICKETS) { Ticket() }
+    private val _tickets = Array(TICKETS) { Ticket() }
+
+    val tickets: List<Ticket>
+        get() = _tickets.toList()
 
     private val filledByStripRow = Array(STRIP_ROWS) { 0 }
     private val filledByTicketColumn = Array(TICKETS) { Array(COLUMNS) { 0 } }
     private val remainingByStripColumn = Array(COLUMNS) { column -> NUMBERS_BY_COLUMN.getValue(column).size }
 
     private fun canInsert(stripRowIndex: Int, columnIndex: Int): Boolean =
-        tickets[ticketIndex(stripRowIndex)].canInsert(ticketRowIndex(stripRowIndex), columnIndex) &&
+        _tickets[ticketIndex(stripRowIndex)].canInsert(ticketRowIndex(stripRowIndex), columnIndex) &&
             validateEmptyTicketsCanBeFilled(ticketIndex(stripRowIndex), columnIndex)
 
-    private fun insertSorted(number: Int, stripRowIndex: Int, columnIndex: Int) {
+    private fun insertSorted(number: Number, stripRowIndex: Int, columnIndex: Int) {
         val ticketIndex = ticketIndex(stripRowIndex)
         val ticketRowIndex = ticketRowIndex(stripRowIndex)
 
-        tickets[ticketIndex].insertSorted(number, ticketRowIndex, columnIndex)
+        _tickets[ticketIndex].insertSorted(number, ticketRowIndex, columnIndex)
 
         filledByStripRow[stripRowIndex(ticketIndex, ticketRowIndex)]++
         filledByTicketColumn[ticketIndex][columnIndex]++
@@ -59,7 +62,7 @@ class Strip private constructor() {
         return remainingByStripColumn[columnIndex] - emptyExclusiveTickets > 0
     }
 
-    override fun toString(): String = tickets
+    override fun toString(): String = _tickets
         .mapIndexed { index, ticket -> "Ticket ${index + 1}:\n$ticket" }
         .joinToString(separator = "") { it }
 
@@ -98,14 +101,19 @@ class Strip private constructor() {
 
 class Ticket internal constructor() {
 
-    val rows = List(TICKET_ROWS) { List(COLUMNS) { Square() } }
-    val columns = (0 until COLUMNS).map { column -> List(TICKET_ROWS) { row -> getSquare(row, column) } }
+    private val _rows = Array(TICKET_ROWS) { Array<Square>(COLUMNS) { Blank } }
+
+    val rows: List<List<Square>>
+        get() = _rows.map { it.toList() }
+
+    val columns: List<List<Square>>
+        get() = (0 until COLUMNS).map { column -> List(TICKET_ROWS) { row -> getSquare(row, column) } }
 
     private val filledByRow = Array(TICKET_ROWS) { 0 }
     private val filledByColumn = Array(COLUMNS) { 0 }
     private var filledSquares = 0
 
-    fun getSquare(rowIndex: Int, columnIndex: Int) = rows[rowIndex][columnIndex]
+    fun getSquare(rowIndex: Int, columnIndex: Int) = _rows[rowIndex][columnIndex]
 
     fun canInsert(rowIndex: Int, columnIndex: Int): Boolean {
         return validatePositionIsEmpty(rowIndex, columnIndex) &&
@@ -113,8 +121,8 @@ class Ticket internal constructor() {
             validateSquaresLimitWouldNotBeExceeded(columnIndex)
     }
 
-    fun insertSorted(number: Int, rowIndex: Int, columnIndex: Int) {
-        rows[rowIndex][columnIndex].value = number
+    fun insertSorted(number: Number, rowIndex: Int, columnIndex: Int) {
+        _rows[rowIndex][columnIndex] = number
 
         filledByRow[rowIndex]++
         filledByColumn[columnIndex]++
@@ -127,22 +135,21 @@ class Ticket internal constructor() {
         if (filledByColumn[columnIndex] <= 1) {
             return
         }
-        val column = columns[columnIndex]
-        val filledColumnIndexes = (0 until TICKET_ROWS).filter { column[it].isFilled() }
+        val numberRowIndexes = (0 until TICKET_ROWS).filter { getSquare(it, columnIndex) is Number }
 
-        for (outer in 1 until filledColumnIndexes.size) {
-            val key = column[filledColumnIndexes[outer]].value!!
+        for (outer in 1 until numberRowIndexes.size) {
+            val key = getSquare(numberRowIndexes[outer], columnIndex) as Number
             var inner = outer
-            while (inner > 0 && column[filledColumnIndexes[inner - 1]].value!! > key) {
-                column[filledColumnIndexes[inner]].value = column[filledColumnIndexes[inner - 1]].value
+            while (inner > 0 && getSquare(numberRowIndexes[inner - 1], columnIndex) as Number > key) {
+                _rows[numberRowIndexes[inner]][columnIndex] = _rows[numberRowIndexes[inner - 1]][columnIndex]
                 inner--
             }
-            column[filledColumnIndexes[inner]].value = key
+            _rows[numberRowIndexes[inner]][columnIndex] = key
         }
     }
 
     private fun validatePositionIsEmpty(rowIndex: Int, columnIndex: Int): Boolean =
-        getSquare(rowIndex, columnIndex).isEmpty()
+        getSquare(rowIndex, columnIndex) is Blank
 
     private fun validateRowLimitNotReached(rowIndex: Int): Boolean =
         filledByRow[rowIndex] < NUMBERS_PER_ROW
@@ -150,22 +157,20 @@ class Ticket internal constructor() {
     private fun validateSquaresLimitWouldNotBeExceeded(columnIndex: Int): Boolean =
         filledSquares + columnsRemaining(columnIndex) < NUMBERS_PER_TICKET
 
-    override fun toString() = rows
+    override fun toString() = _rows
         .asSequence()
-        .map {
-            it.joinToString(
-                separator = "\t",
-                postfix = "\n",
-                transform = Square::toString
-            )
-        }
+        .map { it.joinToString(separator = "\t", postfix = "\n", transform = Square::toString) }
         .joinToString(separator = "") { it }
 }
 
-class Square internal constructor(var value: Int? = null) {
+sealed class Square
 
-    fun isEmpty(): Boolean = value == null
-    fun isFilled(): Boolean = !isEmpty()
-
-    override fun toString(): String = value?.toString() ?: "X"
+object Blank : Square() {
+    override fun toString(): String = "X"
 }
+
+data class Number(val value: Int) : Square(), Comparable<Number> {
+    override fun compareTo(other: Number): Int = value.compareTo(other.value)
+    override fun toString(): String = value.toString()
+}
+
