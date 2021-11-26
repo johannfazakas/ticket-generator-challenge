@@ -1,5 +1,29 @@
 # Ticket Generator Challenge
 
+## Run
+
+```bash
+# generate and display 1 strip of tickets. generation duration is also displayed at the end of the output
+./gradlew run
+
+# specify the number of strips to be generated and display them
+./gradlew run --args=5
+
+# run without displaying the strips. duration is still displayed
+./gradlew run --args=silent
+
+# specify the number of strips to be generated but don't display them
+./gradlew run --args="10000 silent"
+```
+
+## Test
+
+```bash
+./gradlew clean test
+```
+
+## Requirements
+
 A small challenge that involves building a [Bingo 90](https://en.wikipedia.org/wiki/Bingo_(United_Kingdom)) ticket generator.
 
 **Requirements:**

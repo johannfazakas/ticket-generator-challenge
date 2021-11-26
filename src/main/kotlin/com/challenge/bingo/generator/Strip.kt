@@ -59,7 +59,7 @@ class Strip private constructor() {
         return remainingByStripColumn[columnIndex] - emptyExclusiveTickets > 0
     }
 
-    override fun toString(): String = "Strip:\n" + tickets
+    override fun toString(): String = tickets
         .mapIndexed { index, ticket -> "Ticket ${index + 1}:\n$ticket" }
         .joinToString(separator = "") { it }
 
@@ -162,7 +162,7 @@ class Ticket internal constructor() {
         .joinToString(separator = "") { it }
 }
 
-class Square internal constructor(var value: Int? = null)  {
+class Square internal constructor(var value: Int? = null) {
 
     fun isEmpty(): Boolean = value == null
     fun isFilled(): Boolean = !isEmpty()
