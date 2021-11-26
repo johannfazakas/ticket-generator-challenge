@@ -1,4 +1,4 @@
-package com.lindar.challenge.bingo
+package com.challenge.bingo.generator
 
 import java.util.Random
 

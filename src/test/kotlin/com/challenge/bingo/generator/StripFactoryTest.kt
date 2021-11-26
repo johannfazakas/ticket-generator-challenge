@@ -1,10 +1,9 @@
-package com.lindar.challenge.bingo
+package com.challenge.bingo.generator
 
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.isIn
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertTimeout
 import java.time.Duration
@@ -40,7 +39,7 @@ internal class StripFactoryTest {
         val distinctNumbersInStrip = strip.tickets
             .flatMap { it.rows }
             .flatten()
-            .mapNotNull(Square::number)
+            .mapNotNull(Square::value)
             .toSet()
         assertThat(distinctNumbersInStrip, hasSize(90))
         distinctNumbersInStrip.forEach { assertThat(it, isIn((1..90).toList())) }
@@ -74,33 +73,33 @@ internal class StripFactoryTest {
         strip.tickets.forEach { ticket ->
             ticket.columns.forEachIndexed { column, values ->
                 when (column) {
-                    0 -> values.mapNotNull(Square::number).forEach { assertThat(it, isIn((1..9).toList())) }
-                    1 -> values.mapNotNull(Square::number).forEach { assertThat(it, isIn((10..19).toList())) }
-                    2 -> values.mapNotNull(Square::number).forEach { assertThat(it, isIn((20..29).toList())) }
-                    3 -> values.mapNotNull(Square::number).forEach { assertThat(it, isIn((30..39).toList())) }
-                    4 -> values.mapNotNull(Square::number).forEach { assertThat(it, isIn((40..49).toList())) }
-                    5 -> values.mapNotNull(Square::number).forEach { assertThat(it, isIn((50..59).toList())) }
-                    6 -> values.mapNotNull(Square::number).forEach { assertThat(it, isIn((60..69).toList())) }
-                    7 -> values.mapNotNull(Square::number).forEach { assertThat(it, isIn((70..79).toList())) }
-                    8 -> values.mapNotNull(Square::number).forEach { assertThat(it, isIn((80..90).toList())) }
+                    0 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((1..9).toList())) }
+                    1 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((10..19).toList())) }
+                    2 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((20..29).toList())) }
+                    3 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((30..39).toList())) }
+                    4 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((40..49).toList())) }
+                    5 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((50..59).toList())) }
+                    6 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((60..69).toList())) }
+                    7 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((70..79).toList())) }
+                    8 -> values.mapNotNull(Square::value).forEach { assertThat(it, isIn((80..90).toList())) }
                 }
             }
         }
     }
 
-    @Disabled
     @Test
     fun `should generate strip with tickets containing column values sorted ascending`() {
         val strip = Strip.Factory.generate(1, randomGenerator)[0]
 
         strip.tickets.forEach { ticket ->
             ticket.columns.forEach { column ->
-                val columnNumbers = column.mapNotNull(Square::number)
+                val columnNumbers = column.mapNotNull(Square::value)
                 assertThat(columnNumbers, `is`(columnNumbers.sorted()))
             }
         }
     }
 
+    // it takes 450-600ms on my local
     @Test
     fun `should generate 10k strips in 1 second`() {
         assertTimeout(Duration.ofSeconds(1)) { Strip.Factory.generate(10_000, randomGenerator)[0] }

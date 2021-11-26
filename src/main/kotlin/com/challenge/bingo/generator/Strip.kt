@@ -1,4 +1,4 @@
-package com.lindar.challenge.bingo
+package com.challenge.bingo.generator
 
 import java.util.Random
 
@@ -102,15 +102,8 @@ class Ticket internal constructor() {
     val columns = (0 until COLUMNS).map { column -> List(TICKET_ROWS) { row -> getSquare(row, column) } }
 
     private val filledByRow = Array(TICKET_ROWS) { 0 }
+    private val filledByColumn = Array(COLUMNS) { 0 }
     private var filledSquares = 0
-
-    fun insertSorted(number: Int, row: Int, column: Int) {
-        rows[row][column].number = number
-        // TODO(sort)
-
-        filledByRow[row]++
-        filledSquares++
-    }
 
     fun getSquare(rowIndex: Int, columnIndex: Int) = rows[rowIndex][columnIndex]
 
@@ -118,6 +111,34 @@ class Ticket internal constructor() {
         return validatePositionIsEmpty(rowIndex, columnIndex) &&
             validateRowLimitNotReached(rowIndex) &&
             validateSquaresLimitWouldNotBeExceeded(columnIndex)
+    }
+
+    fun insertSorted(number: Int, rowIndex: Int, columnIndex: Int) {
+        rows[rowIndex][columnIndex].value = number
+
+        filledByRow[rowIndex]++
+        filledByColumn[columnIndex]++
+        filledSquares++
+
+        ensureColumnOrder(columnIndex)
+    }
+
+    private fun ensureColumnOrder(columnIndex: Int) {
+        if (filledByColumn[columnIndex] <= 1) {
+            return
+        }
+        val column = columns[columnIndex]
+        val filledColumnIndexes = (0 until TICKET_ROWS).filter { column[it].isFilled() }
+
+        for (outer in 1 until filledColumnIndexes.size) {
+            val key = column[filledColumnIndexes[outer]].value!!
+            var inner = outer
+            while (inner > 0 && column[filledColumnIndexes[inner - 1]].value!! > key) {
+                column[filledColumnIndexes[inner]].value = column[filledColumnIndexes[inner - 1]].value
+                inner--
+            }
+            column[filledColumnIndexes[inner]].value = key
+        }
     }
 
     private fun validatePositionIsEmpty(rowIndex: Int, columnIndex: Int): Boolean =
@@ -141,10 +162,10 @@ class Ticket internal constructor() {
         .joinToString(separator = "") { it }
 }
 
-class Square internal constructor(var number: Int? = null) {
+class Square internal constructor(var value: Int? = null)  {
 
-    fun isEmpty(): Boolean = number == null
+    fun isEmpty(): Boolean = value == null
     fun isFilled(): Boolean = !isEmpty()
 
-    override fun toString(): String = number?.toString() ?: "X"
+    override fun toString(): String = value?.toString() ?: "X"
 }
